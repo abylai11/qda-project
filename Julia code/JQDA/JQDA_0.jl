@@ -133,6 +133,73 @@ Gray.(labels_map(segments)./maximum(labels_map(segments)))
 # ╔═╡ 64e7649a-a7ff-4603-9a35-67deb350e363
 unique(labels_map(segments))
 
+# ╔═╡ a1850f3a-b491-4f71-8642-bac933417339
+labels_map(segments)
+
+# ╔═╡ 0e948dac-4c47-48ff-80e8-bcf5b0179992
+md"""
+### Segmented region extraction
+"""
+
+# ╔═╡ 9d934cfb-c26a-4493-b717-0aaf8295237d
+function trova_indici_pattern(m, label)
+	# first = findfirst(x -> x==label, m)
+	# last = findlast(x -> x==label, m)
+	# start_row, start_col = first[1], first[2]
+	# end_row, end_col = last[1], last[2]
+	
+	start_row, start_col = 0, 0
+	end_row, end_col = 0, 0
+
+	for i in 1:size(m,1)
+		if label in m[i,:]
+			if start_row==0 start_row = i end
+			end_row = i
+		end
+	end
+	for j in 1:size(m,2)
+		if label in m[:,j]
+			if start_col==0 start_col= j end
+			end_col = j
+		end
+	end
+
+    return start_row, start_col, end_row, end_col
+end
+
+# ╔═╡ 7f7891a6-14cc-42b8-b724-a39883a2308b
+# example
+m = [
+    1 1 1 1 1 1 1 1 1 1;
+    1 1 1 2 2 2 2 1 1 1;
+    2 1 1 2 2 2 2 1 1 1;
+    1 1 1 1 1 1 1 1 2 1
+]
+
+# ╔═╡ 0a1842c9-c144-4dd3-8555-e56581bd3f5a
+begin
+	start_row, start_col, end_row, end_col = trova_indici_pattern(m,2)
+	println("starting pattern cell: ($start_row, $start_col)")
+	println("ending pattern cell: ($end_row, $end_col)")
+end
+
+# ╔═╡ 64b12b8d-f824-497d-a9db-0ab1b7402186
+begin
+	coords2 = trova_indici_pattern(labels_map(segments),2)
+	coords3 = trova_indici_pattern(labels_map(segments),3)
+	coords4 = trova_indici_pattern(labels_map(segments),4)
+	coords5 = trova_indici_pattern(labels_map(segments),5)
+end
+
+# ╔═╡ 1ef07af2-32d4-407c-addf-7c38295d46c5
+mosaic(
+	tray[coords2[1]:coords2[3],coords2[2]:coords2[4]],
+	tray[coords3[1]:coords3[3],coords3[2]:coords3[4]],
+	tray[coords4[1]:coords4[3],coords4[2]:coords4[4]],
+	tray[coords5[1]:coords5[3],coords5[2]:coords5[4]],
+	ncol=2, npad=2, fillvalue=1
+)
+
 # ╔═╡ Cell order:
 # ╟─0ca3370e-791c-46bb-8e07-383d254285d5
 # ╟─54a14054-cd36-4d95-9a1a-993b874510ed
@@ -165,3 +232,10 @@ unique(labels_map(segments))
 # ╠═30a8dab9-ab49-4902-8a08-27c1311ba5b8
 # ╠═d743a9f3-61e8-4d12-9496-1905e58699e0
 # ╠═64e7649a-a7ff-4603-9a35-67deb350e363
+# ╠═a1850f3a-b491-4f71-8642-bac933417339
+# ╟─0e948dac-4c47-48ff-80e8-bcf5b0179992
+# ╠═9d934cfb-c26a-4493-b717-0aaf8295237d
+# ╠═7f7891a6-14cc-42b8-b724-a39883a2308b
+# ╠═0a1842c9-c144-4dd3-8555-e56581bd3f5a
+# ╠═64b12b8d-f824-497d-a9db-0ab1b7402186
+# ╠═1ef07af2-32d4-407c-addf-7c38295d46c5
