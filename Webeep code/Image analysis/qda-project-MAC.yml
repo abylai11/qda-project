@@ -1,0 +1,20 @@
+  
+name: qda_project-MAC
+channels:
+  - defaults
+dependencies:
+  - anaconda
+  - numpy
+  - pandas
+  - matplotlib
+  - matplotlib-inline
+  - matplotlib-base
+  - scipy
+  - pip
+  - zlib
+  - libtiff
+  - openjpeg
+  - pip:
+      - opencv-contrib-python
+      - scikit-image
+      - Pillow
