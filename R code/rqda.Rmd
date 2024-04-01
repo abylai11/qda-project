@@ -3,6 +3,7 @@ title: "Untitled"
 output: html_document
 ---
 
+# Data setup
 ```{r}
 df = read.csv("../Processed dataset/image_statistics.csv")
 head(df)
@@ -13,13 +14,74 @@ colnames(df)
 ```
 
 ```{r}
+real_part_id = function(imgname, location){
+	imgid = as.integer(gsub("img(.*)\\.bmp","\\1",imgname))
+	if (location=="top_left") return ((imgid-1)*4+1)
+	else if (location=="top_right") return ((imgid-1)*4+2)
+	else if (location=="bottom_left") return ((imgid-1)*4+3)
+	else if (location=="bottom_right") return ((imgid-1)*4+4)
+}
+
+real_part_id("img01.bmp","top_left")
+real_part_id("img01.bmp","top_right")
+real_part_id("img01.bmp","bottom_left")
+real_part_id("img01.bmp","bottom_right")
+
+real_part_id("img02.bmp","top_left")
+real_part_id("img02.bmp","top_right")
+# ecc
+```
+
+
+```{r}
 df_parts = df[which(df$Region_type=="part"),]
-df_parts$Part_ID = as.integer(gsub("img(.*)\\.bmp","\\1",df_parts$Image_name))
+df_parts$Part_ID = sapply(1:nrow(df_parts), function(i) real_part_id(df_parts[i,1], df_parts[i, 2]))
 
 df_voids = df[which(df$Region_type=="void"),]
-df_voids$Part_ID = as.integer(gsub("img(.*)\\.bmp","\\1",df_voids$Image_name))
+df_voids$Part_ID = sapply(1:nrow(df_voids), function(i) real_part_id(df_voids[i,1], df_voids[i, 2]))
 
 head(df_parts)
 head(df_voids)
 ```
+
+```{r}
+dim(df)
+dim(df_parts)
+dim(df_voids)
+```
+
+# Exploration
+```{r}
+numerical_cols = c(5:13)
+colnames(df_parts)
+cat("\n")
+colnames(df_voids)
+```
+
+```{r}
+plot(df_voids$Area_pixels,df_voids$Perimeter_pixels,col=df_voids$ID,pch=19)
+```
+
+
+# Images on R
+```{r}
+library(png) # maluccio/bad-ish
+pp=readPNG("../Processed dataset/img01.bmp_bottom_left_labeled.png")
+plot.new() 
+rasterImage(pp,0,0,1,1)
+```
+
+
+```{r}
+library(imager) # meglio forse/better maybe
+imm = load.image("../Processed dataset/img01.bmp_bottom_left_labeled.png")
+plot(imm)
+```
+
+
+
+
+
+
+
 
