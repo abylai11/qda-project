@@ -1,9 +1,13 @@
 ############################################################################################################################################################################°°
+# These packages were missing and neede to install for me:
+# pip install scikit-image
+# pip install opencv-python
+
 
 #For a quick intro to image analysis and the explanation of the metrics computed by this code, please refer to the provided slides.
 
 # EDIT THE PATH OF THE FOLDER CONTAINING THE ORIGINAL IMAGES
-folder_path = "path/to/original/images/folder" 
+folder_path = "../../Dataset/Human named" 
 
 #1. You can rename images as you wish. Only files with the following extensions inside the folder will be processed: .png, .jpg, .jpeg, .bmp
 #2. The images will be preprocessed by converting them to grayscale, increasing the contrast, and segmenting them using Otsu's thresholding.
@@ -11,7 +15,7 @@ folder_path = "path/to/original/images/folder"
 #4. The samples will be sorted based on their centroids, in a grid-like fashion, indexing the 4 connected regions as top-left, bottom-left, top-right and bottom-right.
 
 # EDIT THE PATH OF THE FOLDER IN WHICH YOU WANT TO OUTPUT THE STATISTICS AND THE LABELED IMAGES
-output_folder = "path/to/output/folder"
+output_folder = "../../Processed dataset/"
 
 #In the output folder, the following files will be generated:
 
@@ -24,6 +28,7 @@ output_folder = "path/to/output/folder"
    #These images are necessary to understand the correspondence between the voids in each sample and their statistics in the CSV file.
 
 ############################################################################################################################################################################
+
 
 import os
 import re

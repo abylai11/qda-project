@@ -1,0 +1,14 @@
+Date: 26.03.2024
+Time: 09:43:27
+TZ: GMT/UTC.061
+ImageNo: 23
+Exposure: 10000
+Brightness: 200
+Focus: N/A
+LightSource: 6GF3540-8DA13
+ProgramNo: 6.Studenti2
+Image UID: xWyHvMbxwzDCYCHtB+sRAAAY
+Additional Information:
+Trg
+Read
+Read All

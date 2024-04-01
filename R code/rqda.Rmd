@@ -1,0 +1,25 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r}
+df = read.csv("../Processed dataset/image_statistics.csv")
+head(df)
+
+colnames(df) = gsub("\\.+", "_", colnames(df))
+colnames(df) = gsub("\\_$", "", colnames(df))
+colnames(df)
+```
+
+```{r}
+df_parts = df[which(df$Region_type=="part"),]
+df_parts$Part_ID = as.integer(gsub("img(.*)\\.bmp","\\1",df_parts$Image_name))
+
+df_voids = df[which(df$Region_type=="void"),]
+df_voids$Part_ID = as.integer(gsub("img(.*)\\.bmp","\\1",df_voids$Image_name))
+
+head(df_parts)
+head(df_voids)
+```
+
