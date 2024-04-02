@@ -35,7 +35,7 @@ plot_img = function(part_id,verbose=0,option="s"){
 	title(main=paste0("pID=",part_id," (",out[1]," - ",out[2],")"), line = 0.3)
 
 }
-plot_img(5) # example
+# plot_img(5) # example
 ```
 
 
@@ -96,7 +96,7 @@ part_id_to_img_info(6)
 #ecc
 ```
 
-
+## parts and voids
 ```{r}
 df$Part_ID = sapply(1:nrow(df), function(i) img_info_to_part_id(df[i,1], df[i, 2]))
 
@@ -115,13 +115,12 @@ df_parts
 df_voids
 ```
 
+## a df for each img
 ```{r}
 df_imgs = list()
 for (i in unique(df_parts$Part_ID)){
 	df_imgs[[i]] = df[which(df$Part_ID==i),]
 }
-df_imgs[[1]]
-df_imgs[[2]]
 ```
 
 
@@ -142,22 +141,53 @@ colnames(df_voids)
 ```
 
 ```{r}
-plot(df_voids$Area_pixels,df_voids$Perimeter_pixels,col=df_voids$ID,pch=19)
+df_plot = df_voids
+cols = colora(max(df_plot$Part_ID),56,0)
+for (i in 5:12){
+	for (j in (i+1):13){
+		plot(df_plot[,i],df_plot[,j],
+			 col=cols[df_plot$Part_ID], 
+			 pch=19,
+			 xlab = colnames(df_plot)[i], 
+			 ylab = colnames(df_plot)[j])
+	}
+}
 ```
 
 ```{r}
+df_plot = df_parts
+cols = colora(max(df_plot$Part_ID),56,0)
+for (i in 5:12){
+	for (j in (i+1):13){
+		plot(df_plot[,i],df_plot[,j],
+			 col=cols[df_plot$Part_ID], 
+			 pch=19,
+			 xlab = colnames(df_plot)[i], 
+			 ylab = colnames(df_plot)[j])
+	}
+}
+```
+
+
+```{r}
 for (c in numerical_cols){
-	hist(df_parts[,c],main=c)
+	hist(df_parts[,c],main=paste("df_parts -",c))
 }
 # Eccentricity and Orientation show some braking zones
 ```
+```{r}
+for (c in numerical_cols){
+	hist(df_voids[,c],main=paste("df_voids -",c))
+}
+# Eccentricity and Orientation show some braking zones
+```
+
 
 ```{r}
 cols = colora(40,113,0)
 plot(df_parts$Eccentricity,df_parts$Orientation_radians,
 	 col=cols[df_parts$Part_ID],pch=19,ylim=c(-1.6,1.6))
 text(df_parts$Eccentricity,df_parts$Orientation_radians+0.11,1:40,cex=0.6)
-
 ```
 
 ```{r}
@@ -176,7 +206,6 @@ plot_img(39)
 plot_img(7)
 plot_img(19)
 ```
-
 
 
 
