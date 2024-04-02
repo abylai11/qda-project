@@ -3,46 +3,127 @@ title: "Untitled"
 output: html_document
 ---
 
+```{r}
+source("../R code/include.R")
+```
+
+# Images on R
+```{r}
+library(imager)
+library(magick)
+
+plot_img = function(part_id,verbose=0,option="s"){
+	if (option=="l"){
+		optmode="labeled"
+	} else {
+		optmode ="segmented"
+	}
+	out = part_id_to_img_info(part_id)
+	
+	name=paste0("img",out[1],".bmp_",out[2],"_",optmode,".png")
+	if (verbose==1) cat(name)
+	
+	### with imager
+	# img__ = load.image(paste0("../Processed dataset/",name))
+	# plot(img__,main=name)
+	
+	### with magick
+	img__ = image_read(paste0("../Processed dataset/",name))
+	# print(img__)
+	par(mar=c(0,2,2,0))
+	plot(as.raster(img__))
+	title(main=paste0("pID=",part_id," (",out[1]," - ",out[2],")"), line = 0.3)
+
+}
+plot_img(5) # example
+```
+
+
 # Data setup
 ```{r}
 df = read.csv("../Processed dataset/image_statistics.csv")
 head(df)
 
+colnames(df)
 colnames(df) = gsub("\\.+", "_", colnames(df))
 colnames(df) = gsub("\\_$", "", colnames(df))
+cat("\n")
 colnames(df)
 ```
 
 ```{r}
-real_part_id = function(imgname, location){
+img_info_to_part_id = function(imgname, location){
 	imgid = as.integer(gsub("img(.*)\\.bmp","\\1",imgname))
 	if (location=="top_left") return ((imgid-1)*4+1)
-	else if (location=="top_right") return ((imgid-1)*4+2)
-	else if (location=="bottom_left") return ((imgid-1)*4+3)
+	else if (location=="bottom_left") return ((imgid-1)*4+2)
+	else if (location=="top_right") return ((imgid-1)*4+3)
 	else if (location=="bottom_right") return ((imgid-1)*4+4)
 }
+img_info_to_part_id("img01.bmp","top_left")
+img_info_to_part_id("img01.bmp","bottom_left")
+img_info_to_part_id("img01.bmp","top_right")
+img_info_to_part_id("img01.bmp","bottom_right")
 
-real_part_id("img01.bmp","top_left")
-real_part_id("img01.bmp","top_right")
-real_part_id("img01.bmp","bottom_left")
-real_part_id("img01.bmp","bottom_right")
-
-real_part_id("img02.bmp","top_left")
-real_part_id("img02.bmp","top_right")
+img_info_to_part_id("img02.bmp","top_left")
+img_info_to_part_id("img02.bmp","bottom_left")
+img_info_to_part_id("img02.bmp","top_right")
 # ecc
+```
+```{r}
+part_id_to_img_info = function(part_id){
+	pid_copy = part_id-1
+	while (pid_copy%%4 != 0){
+		pid_copy = pid_copy-1
+	}
+	imgnum = pid_copy/4+1
+	imgnum = sprintf("%02d", imgnum)
+
+	
+	if (part_id%%4==1) location="top_left"
+	else if (part_id%%4==2) location="bottom_left"
+	else if (part_id%%4==3) location="top_right"
+	else if (part_id%%4==0) location="bottom_right"
+	
+	return (c(imgnum,location))
+}
+part_id_to_img_info(1)
+part_id_to_img_info(2)
+part_id_to_img_info(3)
+part_id_to_img_info(4)
+
+part_id_to_img_info(5)
+part_id_to_img_info(6)
+#ecc
 ```
 
 
 ```{r}
+df$Part_ID = sapply(1:nrow(df), function(i) img_info_to_part_id(df[i,1], df[i, 2]))
+
 df_parts = df[which(df$Region_type=="part"),]
-df_parts$Part_ID = sapply(1:nrow(df_parts), function(i) real_part_id(df_parts[i,1], df_parts[i, 2]))
+df_parts$Part_ID = sapply(1:nrow(df_parts), function(i) img_info_to_part_id(df_parts[i,1], df_parts[i, 2]))
+df_parts$Num_voids = sapply(1:nrow(df_parts), function(i)
+	max(df$ID[which(df$Part_ID==df_parts[i,"Part_ID"])]))
 
 df_voids = df[which(df$Region_type=="void"),]
-df_voids$Part_ID = sapply(1:nrow(df_voids), function(i) real_part_id(df_voids[i,1], df_voids[i, 2]))
+df_voids$Part_ID = sapply(1:nrow(df_voids), function(i) img_info_to_part_id(df_voids[i,1], df_voids[i, 2]))
+df_voids$Num_voids = sapply(1:nrow(df_voids), function(i)
+	max(df$ID[which(df$Part_ID==df_voids[i,"Part_ID"])]))
 
-head(df_parts)
-head(df_voids)
+
+df_parts
+df_voids
 ```
+
+```{r}
+df_imgs = list()
+for (i in unique(df_parts$Part_ID)){
+	df_imgs[[i]] = df[which(df$Part_ID==i),]
+}
+df_imgs[[1]]
+df_imgs[[2]]
+```
+
 
 ```{r}
 dim(df)
@@ -52,7 +133,9 @@ dim(df_voids)
 
 # Exploration
 ```{r}
-numerical_cols = c(5:13)
+numerical_cols_idxs = c(5:13)
+numerical_cols = colnames(df)[5:13]
+
 colnames(df_parts)
 cat("\n")
 colnames(df_voids)
@@ -62,24 +145,37 @@ colnames(df_voids)
 plot(df_voids$Area_pixels,df_voids$Perimeter_pixels,col=df_voids$ID,pch=19)
 ```
 
-
-# Images on R
 ```{r}
-library(png) # maluccio/bad-ish
-pp=readPNG("../Processed dataset/img01.bmp_bottom_left_labeled.png")
-plot.new() 
-rasterImage(pp,0,0,1,1)
+for (c in numerical_cols){
+	hist(df_parts[,c],main=c)
+}
+# Eccentricity and Orientation show some braking zones
+```
+
+```{r}
+cols = colora(40,113,0)
+plot(df_parts$Eccentricity,df_parts$Orientation_radians,
+	 col=cols[df_parts$Part_ID],pch=19,ylim=c(-1.6,1.6))
+text(df_parts$Eccentricity,df_parts$Orientation_radians+0.11,1:40,cex=0.6)
+
+```
+
+```{r}
+par(mfrow=c(2,2)) # top right
+plot_img(23)
+plot_img(3)
+plot_img(11)
+plot_img(27)
 ```
 
 
 ```{r}
-library(imager) # meglio forse/better maybe
-imm = load.image("../Processed dataset/img01.bmp_bottom_left_labeled.png")
-plot(imm)
+par(mfrow=c(2,2)) # bottom left
+plot_img(15)
+plot_img(39)
+plot_img(7)
+plot_img(19)
 ```
-
-
-
 
 
 
