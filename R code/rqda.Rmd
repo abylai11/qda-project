@@ -115,6 +115,12 @@ df_parts
 df_voids
 ```
 
+```{r}
+write.csv(df_parts,file="df_parts.csv")
+write.csv(df_voids,file="df_voids.csv")
+```
+
+
 ## a df for each img
 ```{r}
 df_imgs = list()
@@ -142,28 +148,40 @@ colnames(df_voids)
 
 ```{r}
 df_plot = df_voids
+title = "df_voids"
 cols = colora(max(df_plot$Part_ID),56,0)
+
+# pairs(df_plot[,numerical_cols],col=cols[df_plot$Part_ID],pch=19)
+# doesnt see much from the pairs plot, points overlap
+
 for (i in 5:12){
 	for (j in (i+1):13){
 		plot(df_plot[,i],df_plot[,j],
-			 col=cols[df_plot$Part_ID], 
+			 col=cols[df_plot$Part_ID],
 			 pch=19,
-			 xlab = colnames(df_plot)[i], 
-			 ylab = colnames(df_plot)[j])
+			 xlab = colnames(df_plot)[i],
+			 ylab = colnames(df_plot)[j],
+			 main = title)
 	}
 }
 ```
 
 ```{r}
 df_plot = df_parts
+title = "df_parts"
 cols = colora(max(df_plot$Part_ID),56,0)
+
+# pairs(df_plot[,numerical_cols],col=cols[df_plot$Part_ID],pch=19)
+# doesnt see much from the pairs plot, points overlap
+
 for (i in 5:12){
 	for (j in (i+1):13){
 		plot(df_plot[,i],df_plot[,j],
-			 col=cols[df_plot$Part_ID], 
+			 col=cols[df_plot$Part_ID],
 			 pch=19,
-			 xlab = colnames(df_plot)[i], 
-			 ylab = colnames(df_plot)[j])
+			 xlab = colnames(df_plot)[i],
+			 ylab = colnames(df_plot)[j],
+			 main = title)
 	}
 }
 ```
