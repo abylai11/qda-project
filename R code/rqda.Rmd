@@ -12,7 +12,7 @@ source("../R code/include.R")
 library(imager)
 library(magick)
 
-plot_img = function(part_id,verbose=0,option="s"){
+plot_img = function(part_id, rotate_angle=0, verbose=0,option="s"){
 	if (option=="l"){
 		optmode="labeled"
 	} else {
@@ -31,8 +31,9 @@ plot_img = function(part_id,verbose=0,option="s"){
 	img__ = image_read(paste0("../Processed dataset/",name))
 	# print(img__)
 	par(mar=c(0,2,2,0))
-	plot(as.raster(img__))
+	plot(as.raster(image_rotate(img__,rotate_angle)))
 	title(main=paste0("pID=",part_id," (",out[1]," - ",out[2],")"), line = 0.3)
+	# return(img__)
 
 }
 # plot_img(5) # example
@@ -222,9 +223,8 @@ par(mfrow=c(2,2)) # bottom left
 plot_img(15)
 plot_img(39)
 plot_img(7)
-plot_img(19)
+plot_img(19,-3)
 ```
-
 
 
 
