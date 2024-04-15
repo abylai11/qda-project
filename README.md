@@ -1,5 +1,12 @@
 # qda-project
 
+## Notes
+- It is correct the boostrap approach?
+- Variable form the number of pixel
+- Normality of num voids
+- Boostrap t intervals on the average values of df_voids_new
+- divide in big an small voids
+
 ## Goal
 Design a statistical process monitoring method for the in-line detection of defects, ie Propose a method to model, analyze and reduce the dimensionality of the in-line inspection data (use this real dataset to test and apply the methods you learn in this course).
 
