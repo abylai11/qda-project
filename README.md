@@ -35,13 +35,3 @@ Expected output: a zip folder that includes:
 or 
 
 2. Teams who will not use Phython for the project, will be asked to submit a text report in PDF format (the provided template shall be used). Source code or project files + short readme file + Dataframe (only for teams who will not use Phyton).
-
-
-
-### To do  
-- It is correct the boostrap approach?  
-
-- Variable form the number of pixel   
-- Normality of num voids  
-- Boostrap t intervals on the average values of df_voids_new  
-- divide in big an small voids  
