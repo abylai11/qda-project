@@ -1,6 +1,16 @@
 # qda-project
 
-## Notes
+## Notes meeting 29/04
+> Parts
+- We remove extend and solidity because their info is already carried by area and Wpixels ratio variables, once we applied the recentering correction of the objects. So add the plots of one variable vs area or wpixels ratio, to demnostrate this
+- We remove the Wpixels and Bpixels since they merge into the ratio
+- The axes for now we keep them there seems to be a bit of variability in there instead. Well, with equivalent diameter they are similar, so we remove the equivalent diameter, since it is also highly correlated with the area
+
+> Voids
+- For each void we take only the area, we decided this using the for filtering loop on the values of the variables for each image
+
+
+## Notes meeting 1
 - It is correct the boostrap approach?
 - Variable form the number of pixel
 - Normality of num voids
