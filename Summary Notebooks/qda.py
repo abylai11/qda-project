@@ -1,5 +1,4 @@
-#%% version 1.5
-__version__ = 'qda version 1.5'
+__version__ = 'qda version 2.0'
 
 import pandas as pd
 import numpy as np
@@ -11,6 +10,87 @@ from statsmodels.tsa.arima.model import ARIMA as arimafromlib
 
 
 class ControlCharts:
+    @staticmethod
+    def I(original_df, col_name, K = 3, subset_size = None, plotit = True):
+        """Implements the Individual Moving Range (IMR) chart.
+        Parameters
+        ----------
+        original_df : pandas.DataFrame
+            A DataFrame containing the data to be plotted.
+        col_name : str
+            The name of the column to be used for the IMR control chart.
+        K : int, optional
+            The number of standard deviations. Default is 3.
+        subset_size : int, optional
+            The number of rows to be used for the IMR chart. Default is None and all rows are used.
+
+        Returns
+        -------
+        chart : matplotlib.axes._subplots.AxesSubplot
+            The IMR chart.
+
+        df_I : pandas.DataFrame with the following additional columns
+            - MR: The moving range
+            - I_UCL: The upper control limit for the individual
+            - I_CL: The center line for the individual
+            - I_LCL: The lower control limit for the individual
+            - I_TEST1: The points that violate the alarm rule for the individual
+        """
+        # Check if df is a pandas DataFrame
+        if not isinstance(original_df, pd.DataFrame):
+            raise TypeError('The data must be a pandas DataFrame.')
+
+        # Check if the col_name exists in the DataFrame
+        if col_name not in original_df.columns:
+            raise ValueError('The column name does not exist in the DataFrame.')
+
+        # get the size of the DataFrame
+        n = 2
+        d2 = constants.getd2(n)
+        D4 = constants.getD4(n, K)
+
+        if subset_size is None:
+            subset_size = len(original_df)
+        elif subset_size > len(original_df):
+            raise ValueError('The subset size must be less than the number of rows in the DataFrame.')
+
+        # Create a copy of the original DataFrame
+        df = original_df.copy()
+        
+        # Calculate the moving range
+        df['MR'] = df[col_name].diff().abs()
+        # Create columns for the upper and lower control limits
+        df['I_UCL'] = df[col_name].iloc[:subset_size].mean() + (K*df['MR'].iloc[:subset_size].mean()/d2)
+        df['I_CL'] = df[col_name].iloc[:subset_size].mean()
+        df['I_LCL'] = df[col_name].iloc[:subset_size].mean() - (K*df['MR'].iloc[:subset_size].mean()/d2)
+        # Define columns for the Western Electric alarm rules
+        df['I_TEST1'] = np.where((df[col_name] > df['I_UCL']) | (df[col_name] < df['I_LCL']), df[col_name], np.nan)
+
+        if plotit == True:
+            # Plot the I and MR charts
+            plt.title(('I chart of %s' % col_name))
+            plt.plot(df[col_name], color='mediumblue', linestyle='--', marker='o')
+            plt.plot(df['I_UCL'], color='firebrick', linewidth=1)
+            plt.plot(df['I_CL'], color='g', linewidth=1)
+            plt.plot(df['I_LCL'], color='firebrick', linewidth=1)
+            plt.ylabel('Individual Value')
+            plt.xlabel('Sample number')
+            # add the values of the control limits on the right side of the plot
+            plt.text(len(df)+.5, df['I_UCL'].iloc[0], 'UCL = {:.3f}'.format(df['I_UCL'].iloc[0]), verticalalignment='center')
+            plt.text(len(df)+.5, df['I_CL'].iloc[0], 'CL = {:.3f}'.format(df['I_CL'].iloc[0]), verticalalignment='center')
+            plt.text(len(df)+.5, df['I_LCL'].iloc[0], 'LCL = {:.3f}'.format(df['I_LCL'].iloc[0]), verticalalignment='center')
+            # highlight the points that violate the alarm rules
+            plt.plot(df['I_TEST1'], linestyle='none', marker='s', color='firebrick', markersize=10)
+            # set the x-axis limits
+            plt.xlim(-1, len(df))
+
+            if subset_size < len(original_df):
+                plt.vlines(subset_size-.5, df['I_LCL'].iloc[0], df['I_UCL'].iloc[0], color='k', linestyle='--')
+
+            plt.show()
+
+        return df
+
     @staticmethod
     def IMR(original_df, col_name, K = 3, subset_size = None, run_rules = False, plotit = True):
         """Implements the Individual Moving Range (IMR) chart.
@@ -80,7 +160,7 @@ class ControlCharts:
 
         if plotit == True:
             # Plot the I and MR charts
-            fig, ax = plt.subplots(2, 1)
+            fig, ax = plt.subplots(2, 1, sharex=True)
             fig.suptitle(('I-MR charts of %s' % col_name))
             ax[0].plot(df[col_name], color='mediumblue', linestyle='--', marker='o')
             ax[0].plot(df['I_UCL'], color='firebrick', linewidth=1)
@@ -89,11 +169,12 @@ class ControlCharts:
             ax[0].set_ylabel('Individual Value')
             ax[1].set_xlabel('Sample number')
             # add the values of the control limits on the right side of the plot
-            ax[0].text(len(df)+.5, df['I_UCL'].iloc[0], 'UCL = {:.2f}'.format(df['I_UCL'].iloc[0]), verticalalignment='center')
-            ax[0].text(len(df)+.5, df['I_CL'].iloc[0], 'CL = {:.2f}'.format(df['I_CL'].iloc[0]), verticalalignment='center')
-            ax[0].text(len(df)+.5, df['I_LCL'].iloc[0], 'LCL = {:.2f}'.format(df['I_LCL'].iloc[0]), verticalalignment='center')
+            ax[0].text(len(df)+.5, df['I_UCL'].iloc[0], 'UCL = {:.3f}'.format(df['I_UCL'].iloc[0]), verticalalignment='center')
+            ax[0].text(len(df)+.5, df['I_CL'].iloc[0], 'CL = {:.3f}'.format(df['I_CL'].iloc[0]), verticalalignment='center')
+            ax[0].text(len(df)+.5, df['I_LCL'].iloc[0], 'LCL = {:.3f}'.format(df['I_LCL'].iloc[0]), verticalalignment='center')
             # highlight the points that violate the alarm rules
             ax[0].plot(df['I_TEST1'], linestyle='none', marker='s', color='firebrick', markersize=10)
+            ax[0].set_xlim(-1, len(df))
 
             ax[1].plot(df['MR'], color='mediumblue', linestyle='--', marker='o')
             ax[1].plot(df['MR_UCL'], color='firebrick', linewidth=1)
@@ -102,11 +183,14 @@ class ControlCharts:
             ax[1].set_ylabel('Moving Range')
             ax[1].set_xlabel('Sample number')
             # add the values of the control limits on the right side of the plot
-            ax[1].text(len(df)+.5, df['MR_UCL'].iloc[0], 'UCL = {:.2f}'.format(df['MR_UCL'].iloc[0]), verticalalignment='center')
-            ax[1].text(len(df)+.5, df['MR_CL'].iloc[0], 'CL = {:.2f}'.format(df['MR_CL'].iloc[0]), verticalalignment='center')
-            ax[1].text(len(df)+.5, df['MR_LCL'].iloc[0], 'LCL = {:.2f}'.format(df['MR_LCL'].iloc[0]), verticalalignment='center')
+            ax[1].text(len(df)+.5, df['MR_UCL'].iloc[0], 'UCL = {:.3f}'.format(df['MR_UCL'].iloc[0]), verticalalignment='center')
+            ax[1].text(len(df)+.5, df['MR_CL'].iloc[0], 'CL = {:.3f}'.format(df['MR_CL'].iloc[0]), verticalalignment='center')
+            ax[1].text(len(df)+.5, df['MR_LCL'].iloc[0], 'LCL = {:.3f}'.format(df['MR_LCL'].iloc[0]), verticalalignment='center')
             # highlight the points that violate the alarm rules
             ax[1].plot(df['MR_TEST1'], linestyle='none', marker='s', color='firebrick', markersize=10)
+            ax[1].set_xlim(-1, len(df))
+            # set the x-axis limits
+            ax[1].set_xlim(-1, len(df))
 
             if subset_size < len(original_df):
                 ax[0].axvline(x=subset_size-.5, color='k', linestyle='--')
@@ -248,7 +332,7 @@ class ControlCharts:
         return df
     
     @staticmethod
-    def XbarR(original_df, K = 3, subset_size = None, plotit = True):
+    def XbarR(original_df, K = 3, mean = None, subset_size = None, plotit = True):
         '''
         This function plots the Xbar-R charts of a DataFrame 
         and returns the DataFrame with the control limits and alarm rules.
@@ -291,7 +375,11 @@ class ControlCharts:
         # Add a column with the range of the rows
         data_XR['sample_range'] = original_df.max(axis=1) - original_df.min(axis=1)
 
-        Xbar_mean = data_XR['sample_mean'].iloc[:subset_size].mean()
+        if mean is None:
+            Xbar_mean = data_XR['sample_mean'].iloc[:subset_size].mean()
+        else:
+            Xbar_mean = mean
+
         R_mean = data_XR['sample_range'].iloc[:subset_size].mean()
 
         # Now we can compute the CL, UCL and LCL for Xbar and R
@@ -309,43 +397,46 @@ class ControlCharts:
         data_XR['R_TEST1'] = np.where((data_XR['sample_range'] > data_XR['R_UCL']) | 
                 (data_XR['sample_range'] < data_XR['R_LCL']), data_XR['sample_range'], np.nan)
 
-        fig, ax = plt.subplots(2, 1)
-        fig.suptitle(('Xbar-R charts'))
-        ax[0].plot(data_XR['sample_mean'], color='mediumblue', linestyle='--', marker='o')
-        ax[0].plot(data_XR['Xbar_UCL'], color='firebrick', linewidth=1)
-        ax[0].plot(data_XR['Xbar_CL'], color='g', linewidth=1)
-        ax[0].plot(data_XR['Xbar_LCL'], color='firebrick', linewidth=1)
-        ax[0].set_ylabel('Sample Mean')
-        # add the values of the control limits on the right side of the plot
-        ax[0].text(len(data_XR)+.5, data_XR['Xbar_UCL'].iloc[0], 'UCL = {:.3f}'.format(data_XR['Xbar_UCL'].iloc[0]), verticalalignment='center')
-        ax[0].text(len(data_XR)+.5, data_XR['Xbar_CL'].iloc[0], 'CL = {:.3f}'.format(data_XR['Xbar_CL'].iloc[0]), verticalalignment='center')
-        ax[0].text(len(data_XR)+.5, data_XR['Xbar_LCL'].iloc[0], 'LCL = {:.3f}'.format(data_XR['Xbar_LCL'].iloc[0]), verticalalignment='center')
-        # highlight the points that violate the alarm rules
-        ax[0].plot(data_XR['Xbar_TEST1'], linestyle='none', marker='s', color='firebrick', markersize=10)
+        if plotit:
+            fig, ax = plt.subplots(2, 1, sharex=True)
+            fig.suptitle(('Xbar-R charts'))
+            ax[0].plot(data_XR['sample_mean'], color='mediumblue', linestyle='--', marker='o')
+            ax[0].plot(data_XR['Xbar_UCL'], color='firebrick', linewidth=1)
+            ax[0].plot(data_XR['Xbar_CL'], color='g', linewidth=1)
+            ax[0].plot(data_XR['Xbar_LCL'], color='firebrick', linewidth=1)
+            ax[0].set_ylabel('Sample Mean')
+            # add the values of the control limits on the right side of the plot
+            ax[0].text(len(data_XR)+.5, data_XR['Xbar_UCL'].iloc[0], 'UCL = {:.3f}'.format(data_XR['Xbar_UCL'].iloc[0]), verticalalignment='center')
+            ax[0].text(len(data_XR)+.5, data_XR['Xbar_CL'].iloc[0], 'CL = {:.3f}'.format(data_XR['Xbar_CL'].iloc[0]), verticalalignment='center')
+            ax[0].text(len(data_XR)+.5, data_XR['Xbar_LCL'].iloc[0], 'LCL = {:.3f}'.format(data_XR['Xbar_LCL'].iloc[0]), verticalalignment='center')
+            # highlight the points that violate the alarm rules
+            ax[0].plot(data_XR['Xbar_TEST1'], linestyle='none', marker='s', color='firebrick', markersize=10)
 
-        ax[1].plot(data_XR['sample_range'], color='mediumblue', linestyle='--', marker='o')
-        ax[1].plot(data_XR['R_UCL'], color='firebrick', linewidth=1)
-        ax[1].plot(data_XR['R_CL'], color='g', linewidth=1)
-        ax[1].plot(data_XR['R_LCL'], color='firebrick', linewidth=1)
-        ax[1].set_ylabel('Sample Range')
-        ax[1].set_xlabel('Sample Number')
-        # add the values of the control limits on the right side of the plot
-        ax[1].text(len(data_XR)+.5, data_XR['R_UCL'].iloc[0], 'UCL = {:.3f}'.format(data_XR['R_UCL'].iloc[0]), verticalalignment='center')
-        ax[1].text(len(data_XR)+.5, data_XR['R_CL'].iloc[0], 'CL = {:.3f}'.format(data_XR['R_CL'].iloc[0]), verticalalignment='center')
-        ax[1].text(len(data_XR)+.5, data_XR['R_LCL'].iloc[0], 'LCL = {:.3f}'.format(data_XR['R_LCL'].iloc[0]), verticalalignment='center')
-        # highlight the points that violate the alarm rules
-        ax[1].plot(data_XR['R_TEST1'], linestyle='none', marker='s', color='firebrick', markersize=10)
+            ax[1].plot(data_XR['sample_range'], color='mediumblue', linestyle='--', marker='o')
+            ax[1].plot(data_XR['R_UCL'], color='firebrick', linewidth=1)
+            ax[1].plot(data_XR['R_CL'], color='g', linewidth=1)
+            ax[1].plot(data_XR['R_LCL'], color='firebrick', linewidth=1)
+            ax[1].set_ylabel('Sample Range')
+            ax[1].set_xlabel('Sample Number')
+            # add the values of the control limits on the right side of the plot
+            ax[1].text(len(data_XR)+.5, data_XR['R_UCL'].iloc[0], 'UCL = {:.3f}'.format(data_XR['R_UCL'].iloc[0]), verticalalignment='center')
+            ax[1].text(len(data_XR)+.5, data_XR['R_CL'].iloc[0], 'CL = {:.3f}'.format(data_XR['R_CL'].iloc[0]), verticalalignment='center')
+            ax[1].text(len(data_XR)+.5, data_XR['R_LCL'].iloc[0], 'LCL = {:.3f}'.format(data_XR['R_LCL'].iloc[0]), verticalalignment='center')
+            # highlight the points that violate the alarm rules
+            ax[1].plot(data_XR['R_TEST1'], linestyle='none', marker='s', color='firebrick', markersize=10)
+            # set the x-axis limits
+            ax[1].set_xlim(-1, len(data_XR))
 
-        if subset_size < len(original_df):
-            ax[0].axvline(x=subset_size-.5, color='k', linestyle='--')
-            ax[1].axvline(x=subset_size-.5, color='k', linestyle='--')
+            if subset_size < len(original_df):
+                ax[0].axvline(x=subset_size-.5, color='k', linestyle='--')
+                ax[1].axvline(x=subset_size-.5, color='k', linestyle='--')
 
-        plt.show()
+            plt.show()
 
         return data_XR
     
     @staticmethod
-    def XbarS(original_df, K = 3, sigma = None, subset_size = None, plotit = True):
+    def XbarS(original_df, K = 3, mean = None, sigma = None, subset_size = None, plotit = True):
         '''
         This function plots the Xbar-S charts of a DataFrame 
         and returns the DataFrame with the control limits and alarm rules.
@@ -356,6 +447,8 @@ class ControlCharts:
             The DataFrame that contains the data.
         K : int, optional
             The number of standard deviations. The default is 3.
+        mean : float, optional
+            Input the mean of the population. Otherwise, the mean of the sample will be used.
         sigma : float, optional
             Input the standard deviation of the population. Otherwise, the standard deviation of the sample will be used.
         subset_size : int, optional
@@ -384,7 +477,7 @@ class ControlCharts:
             B3 = np.maximum(1 - K * (np.sqrt(1-constants.getc4(n)**2)) / (constants.getc4(n)), 0)
             B4 = 1 + K * (np.sqrt(1-constants.getc4(n)**2)) / (constants.getc4(n))
         else:
-            A3 = K * 1 / (constants.getc4(n) * np.sqrt(n))
+            A3 = K * 1 / np.sqrt(n)
             B5 = np.maximum(constants.getc4(n) - K * np.sqrt(1-constants.getc4(n)**2), 0)
             B6 = constants.getc4(n) + K * np.sqrt(1-constants.getc4(n)**2)
 
@@ -393,11 +486,19 @@ class ControlCharts:
 
         # Add a column with the mean of the rows
         data_XS['sample_mean'] = original_df.mean(axis=1)
-        # Add a column with the range of the rows
+        # Add a column with the stdev of the rows
         data_XS['sample_std'] = original_df.std(axis=1)
 
-        Xbar_mean = data_XS['sample_mean'].iloc[:subset_size].mean()
-        S_mean = data_XS['sample_std'].iloc[:subset_size].mean()
+        if mean is None:
+            Xbar_mean = data_XS['sample_mean'].iloc[:subset_size].mean()
+        else:
+            Xbar_mean = mean
+        
+        if sigma is None:
+            S_mean = data_XS['sample_std'].iloc[:subset_size].mean()
+        else:
+            S_mean = sigma
+
 
         # Now we can compute the CL, UCL and LCL for Xbar and S
         data_XS['Xbar_CL'] = Xbar_mean
@@ -419,7 +520,7 @@ class ControlCharts:
         data_XS['S_TEST1'] = np.where((data_XS['sample_std'] > data_XS['S_UCL']) | 
                         (data_XS['sample_std'] < data_XS['S_LCL']), data_XS['sample_std'], np.nan)
 
-        fig, ax = plt.subplots(2, 1)
+        fig, ax = plt.subplots(2, 1, sharex=True)
         fig.suptitle(('Xbar-S charts'))
         ax[0].plot(data_XS['sample_mean'], color='mediumblue', linestyle='--', marker='o')
         ax[0].plot(data_XS['Xbar_UCL'], color='firebrick', linewidth=1)
@@ -445,6 +546,8 @@ class ControlCharts:
         ax[1].text(len(data_XS)+.5, data_XS['S_LCL'].iloc[0], 'LCL = {:.3f}'.format(data_XS['S_LCL'].iloc[0]), verticalalignment='center')
         # highlight the points that violate the alarm rules
         ax[1].plot(data_XS['S_TEST1'], linestyle='none', marker='s', color='firebrick', markersize=10)
+        # set the x-axis limits
+        ax[1].set_xlim(-1, len(data_XS))
 
         if subset_size < len(original_df):
             ax[0].axvline(x=subset_size-.5, color='k', linestyle='--')
@@ -455,6 +558,188 @@ class ControlCharts:
 
         return data_XS
 
+    @staticmethod
+    def CUSUM(data, col_name, params, mean = None, sigma_xbar = None, subset_size = None, plotit = True):
+        '''
+        This function plots the CUSUM chart of a DataFrame
+        and returns the DataFrame with the CUSUM values.
+
+        Parameters
+        ----------
+        data : DataFrame
+            The DataFrame that contains the data.
+        col_name : str
+            The name of the column in the DataFrame.
+        params : tuple
+            The values of the parameters h and k.
+        mean : float, optional
+            The mean of the population. The default is None.
+        sigma_xbar : float, optional
+            The standard deviation of the population. The default is None.
+        subset_size : int, optional
+            The number of rows to be used for the IMR chart. Default is None and all rows are used.
+        plotit : bool, optional
+            If True, the function will plot the CUSUM chart. The default is True.
+
+        Returns
+        -------
+        df_CUSUM : DataFrame
+            The DataFrame with the CUSUM values.
+        '''
+        # Check if the col_name exists in the DataFrame
+        if col_name not in data.columns:
+            raise ValueError('The column name does not exist in the DataFrame.')
+
+        if subset_size is None:
+            subset_size = len(data)
+        elif subset_size > len(data):
+            raise ValueError('The subset size must be less than the number of rows in the DataFrame.')
+
+        if sigma_xbar is None:
+            sigma_xbar = data.loc[:subset_size, col_name].std()
+        
+        if mean is None:
+            xbarbar = data.loc[:subset_size, col_name].mean()
+        else:   
+            xbarbar = mean
+
+
+        
+        h, k = params
+
+        H = h*sigma_xbar
+        K = k*sigma_xbar
+
+        df_CUSUM = data.copy()
+        df_CUSUM['Ci+'] = 0.0
+        df_CUSUM['Ci-'] = 0.0
+
+        for i in range(len(df_CUSUM)):
+            if i == 0:
+                df_CUSUM.loc[i, 'Ci+'] = max(0, df_CUSUM.loc[i, col_name] - (xbarbar + K))
+                df_CUSUM.loc[i, 'Ci-'] = max(0, (xbarbar - K) - df_CUSUM.loc[i, col_name])
+            else:
+                df_CUSUM.loc[i, 'Ci+'] = max(0, df_CUSUM.loc[i, col_name] - (xbarbar + K) + df_CUSUM.loc[i-1, 'Ci+'])
+                df_CUSUM.loc[i, 'Ci-'] = max(0, (xbarbar - K) - df_CUSUM.loc[i, col_name] + df_CUSUM.loc[i-1, 'Ci-'])
+
+        df_CUSUM['Ci+_TEST1'] = np.where((df_CUSUM['Ci+'] > H) | (df_CUSUM['Ci+'] < -H), df_CUSUM['Ci+'], np.nan)
+        df_CUSUM['Ci-_TEST1'] = np.where((df_CUSUM['Ci-'] > H) | (df_CUSUM['Ci-'] < -H), df_CUSUM['Ci-'], np.nan)
+
+        if plotit == True:
+            # Plot the control limits
+            plt.hlines(H, 0, len(df_CUSUM), color='firebrick', linewidth=1)
+            plt.hlines(0, 0, len(df_CUSUM), color='g', linewidth=1)
+            plt.hlines(-H, 0, len(df_CUSUM), color='firebrick', linewidth=1)
+            # Plot the chart
+            plt.title('CUSUM chart of %s (h=%.2f, k=%.2f)' % (col_name, h, k))
+            plt.plot(df_CUSUM['Ci+'], color='b', linestyle='-', marker='o')
+            plt.plot(-df_CUSUM['Ci-'], color='b', linestyle='-', marker='D')
+            # add the values of the control limits on the right side of the plot
+            plt.text(len(df_CUSUM)+.5, H, 'UCL = {:.3f}'.format(H), verticalalignment='center')
+            plt.text(len(df_CUSUM)+.5, 0, 'CL = {:.3f}'.format(0), verticalalignment='center')
+            plt.text(len(df_CUSUM)+.5, -H, 'LCL = {:.3f}'.format(-H), verticalalignment='center')
+            # highlight the points that violate the alarm rules
+            plt.plot(df_CUSUM['Ci+_TEST1'], linestyle='none', marker='s', color='firebrick', markersize=10)
+            plt.plot(-df_CUSUM['Ci-_TEST1'], linestyle='none', marker='s', color='firebrick', markersize=10)
+            plt.xlim(-1, len(df_CUSUM))
+            # add labels
+            plt.xlabel('Sample')
+            plt.ylabel('Cumulative Sum')
+
+            if subset_size < len(data):
+                plt.vlines(subset_size-.5, -H, H, color='k', linestyle='--')
+        
+            plt.show()
+
+        return df_CUSUM
+
+    @staticmethod
+    def EWMA(data, col_name, params, mean = None, sigma_xbar = None, subset_size = None, plotit = True):
+        '''
+        This function plots the EWMA chart of a DataFrame
+        and returns the DataFrame with the EWMA values.
+
+        Parameters
+        ----------
+        data : DataFrame
+            The DataFrame that contains the data.
+        col_name : str
+            The name of the column in the DataFrame.
+        params : float
+            The value of the parameter lambda.
+        mean : float, optional
+            The mean of the population. The default is None.
+        sigma_xbar : float, optional
+            The standard deviation of the population. The default is None.
+        subset_size : int, optional
+            The number of rows to be used for the IMR chart. Default is None and all rows are used.
+        plotit : bool, optional
+            If True, the function will plot the EWMA chart. The default is True.
+
+        Returns
+        -------
+        df_EWMA : DataFrame
+            The DataFrame with the EWMA values.
+        '''
+        # Check if the col_name exists in the DataFrame
+        if col_name not in data.columns:
+            raise ValueError('The column name does not exist in the DataFrame.')
+
+        if subset_size is None:
+            subset_size = len(data)
+        elif subset_size > len(data):
+            raise ValueError('The subset size must be less than the number of rows in the DataFrame.')
+
+        if sigma_xbar is None:
+            sigma_xbar = data.loc[:subset_size, col_name].std()
+        
+        if mean is None:
+            xbarbar = data.loc[:subset_size, col_name].mean()        
+        else:
+            xbarbar = mean
+
+        lambda_ = params
+
+        df_EWMA = data.copy()
+        df_EWMA['a_t'] = lambda_/(2-lambda_) * (1 - (1-lambda_)**(2*np.arange(1, len(df_EWMA)+1)))
+        
+        for i in range(len(df_EWMA)):
+            if i == 0:
+                df_EWMA.loc[i, 'z'] = lambda_*df_EWMA.loc[i, col_name] + (1-lambda_)*xbarbar
+            else:
+                df_EWMA.loc[i, 'z'] = lambda_*df_EWMA.loc[i, col_name] + (1-lambda_)*df_EWMA.loc[i-1, 'z']
+        
+        df_EWMA['UCL'] = xbarbar + 3*sigma_xbar*np.sqrt(df_EWMA['a_t'])
+        df_EWMA['CL'] = xbarbar
+        df_EWMA['LCL'] = xbarbar - 3*sigma_xbar*np.sqrt(df_EWMA['a_t'])
+
+        df_EWMA['z_TEST1'] = np.where((df_EWMA['z'] > df_EWMA['UCL']) | (df_EWMA['z'] < df_EWMA['LCL']), df_EWMA['z'], np.nan)
+
+        if plotit == True:
+            # Plot the control limits
+            plt.plot(df_EWMA['UCL'], color='firebrick', linewidth=1)
+            plt.plot(df_EWMA['CL'], color='g', linewidth=1)
+            plt.plot(df_EWMA['LCL'], color='firebrick', linewidth=1)
+            # Plot the chart
+            plt.title('EWMA chart of %s (lambda=%.2f)' % (col_name, lambda_))
+            plt.plot(df_EWMA['z'], color='b', linestyle='-', marker='o')
+            # add the values of the control limits on the right side of the plot
+            plt.text(len(df_EWMA)+.5, df_EWMA['UCL'].iloc[-1], 'UCL = {:.3f}'.format(df_EWMA['UCL'].iloc[-1]), verticalalignment='center')
+            plt.text(len(df_EWMA)+.5, df_EWMA['CL'].iloc[-1], 'CL = {:.3f}'.format(df_EWMA['CL'].iloc[-1]), verticalalignment='center')
+            plt.text(len(df_EWMA)+.5, df_EWMA['LCL'].iloc[-1], 'LCL = {:.3f}'.format(df_EWMA['LCL'].iloc[-1]), verticalalignment='center')
+            # highlight the points that violate the alarm rules
+            plt.plot(df_EWMA['z_TEST1'], linestyle='none', marker='s', color='firebrick', markersize=10)
+            plt.xlim(-1, len(df_EWMA))
+            # add labels
+            plt.xlabel('Sample')
+            plt.ylabel('EWMA')
+            
+            if subset_size < len(data):
+                plt.vlines(subset_size-.5, df_EWMA['LCL'].iloc[-1], df_EWMA['UCL'].iloc[-1], color='k', linestyle='--')
+            
+            plt.show()
+        
+        return df_EWMA
 
 import numpy as np
 import scipy.integrate as spi
@@ -513,6 +798,7 @@ class constants:
             raise ValueError("Invalid sample size")
         D4 = 1 + K * constants.getd3(n) / constants.getd2(n)
         return D4
+
 
 def summary(results):
     """Prints a summary of the regression results.
@@ -713,6 +999,225 @@ def ARIMAsummary(results):
     return
 
 
+class Summary:
+
+    @staticmethod
+    def auto(results):
+        """Prints a summary of the model results.
+
+        Parameters
+        ----------
+        results : RegressionResults or ARIMAResults object
+            The results of a model.
+        
+        """
+        if isinstance(results, sm.regression.linear_model.RegressionResultsWrapper):
+            Summary.regression(results)
+        elif isinstance(results, sm.tsa.arima.ARIMAResults):
+            Summary.ARIMA(results)
+        else:
+            print("The type of the results object is not supported.")
+        return
+
+    @staticmethod
+    def regression(results):
+        """Prints a summary of the regression results.
+
+        Parameters
+        ----------
+        results : RegressionResults object
+            The results of a regression model. 
+
+        Returns
+        -------
+        None
+        """
+
+        # Set the precision of the output
+        np.set_printoptions(precision=4, suppress=True)
+        pd.options.display.precision = 4
+
+        # Extract information from the result object
+        terms = results.model.exog_names
+        coefficients = results.params
+        std_errors = results.bse
+        t_values = results.tvalues
+        p_values = results.pvalues
+        #r_squared = results.rsquared
+        #adjusted_r_squared = results.rsquared_adj
+
+        # Print the regression equation
+        print("REGRESSION EQUATION")
+        print("-------------------")
+        equation = ("%s = " % results.model.endog_names)
+        for i in range(len(coefficients)):
+            if results.model.exog_names[i] == 'Intercept':
+                equation += "%.3f" % coefficients[i]
+            else:
+                if coefficients[i] > 0:
+                    equation += " + %.3f %s" % (coefficients[i], terms[i])
+                else:
+                    equation += " %.3f %s" % (coefficients[i], terms[i])
+        print(equation)
+
+        # Print the information in a similar format to Minitab
+        print("\nCOEFFICIENTS")
+        print("------------")
+        # make a dataframe to store the results
+        
+        df_coefficients = pd.DataFrame({'Term': terms, 'Coef': coefficients, 'SE Coef': std_errors, 'T-Value': t_values, 'P-Value': p_values})
+        df_coefficients.style.format({'Coef': '{:.3f}', 'SE Coef': '{:.3f}', 'T-Value': '{:.3f}', 'P-Value': '{:.3f}'})
+        print(df_coefficients.to_string(index=False))
+
+        # Print the R-squared and adjusted R-squared
+        print("\nMODEL SUMMARY")
+        print("-------------")
+        # compute the standard deviation of the distance between the data values and the fitted values
+        S = np.std(results.resid, ddof=len(terms))
+        # make a dataframe to store the results
+        df_model_summary = pd.DataFrame({'S': [S], 'R-sq': [results.rsquared], 'R-sq(adj)': [results.rsquared_adj]})
+        print(df_model_summary.to_string(index=False))
+
+        # Print the ANOVA table
+        print("\nANALYSIS OF VARIANCE")
+        print("---------------------")
+        # make a dataframe with the column names and no data
+        df_anova = pd.DataFrame(columns=['Source', 'DF', 'Adj SS', 'Adj MS', 'F-Value', 'P-Value'])
+        # add the rows of data
+        df_anova.loc[0] = ['Regression', results.df_model, results.mse_model * results.df_model, results.mse_model, results.fvalue, results.f_pvalue]
+        jj = 1
+        for term in terms:
+            if term != 'Intercept':
+                # perform the f-test for the term
+                f_test = results.f_test(term + '= 0')
+                df_anova.loc[jj] = [term, f_test.df_num, f_test.fvalue * results.mse_resid * f_test.df_num, f_test.fvalue * results.mse_resid, f_test.fvalue, f_test.pvalue]
+                jj += 1
+
+        df_anova.loc[jj] = ['Error', results.df_resid, results.mse_resid * results.df_resid, results.mse_resid, np.nan, np.nan]
+
+        '''
+        # Lack-of-fit
+        # compute the number of levels in the independent variables 
+        n_levels = results.df_resid
+        for term in terms:
+            if term != 'Intercept':
+                n_levels = np.minimum(n_levels, len(data[term].unique())
+
+        if n_levels < results.df_resid:
+            dof_lof = n_levels - len(terms)
+            dof_pe = results.df_resid - n_levels
+            # compute the SSE for the pure error term
+            for 
+
+
+            df_anova.loc[jj + 1] = ['Lack-of-fit', n_levels - len(terms), np.nan, np.nan, np.nan, np.nan]
+        '''
+
+        df_anova.loc[jj + 1] = ['Total', results.df_model + results.df_resid, results.mse_total * (results.df_model + results.df_resid), np.nan, np.nan, np.nan]
+
+        print(df_anova.to_string(index=False))
+
+        return
+
+    @staticmethod
+    def ARIMA(results):
+
+        """Prints a summary of the ARIMA results.
+
+        Parameters
+        ----------
+        results : ARIMA object
+            The results of an ARIMA.
+
+        Returns
+        -------
+        None
+        """
+
+        # Set the precision of the output
+        np.set_printoptions(precision=4, suppress=True)
+        pd.options.display.precision = 4
+
+        # Extract information from the result object
+        terms = results.param_names
+        coefficients = results.params
+        std_errors = results.bse
+        t_values = results.tvalues
+        p_values = results.pvalues
+        n_coefficients = len(coefficients) - 1 #because models givers an additional information on sigma^2 in the list of coefficients
+        
+        
+        # get the order of the model
+        n_model = results.nobs
+        ar_order = results.model.order[0]
+        ma_order = results.model.order[2]
+        diff_order = results.model.order[1]
+        order_model = results.model.order
+        order_model_flag = sum(order_model) > 0
+        max_order=np.max(results.model.order)
+        
+        #get seasonal order vector
+        so_model = results.model.seasonal_order
+        DIFF_seasonal_order = so_model[1]
+        seasonal_model_flag = so_model[3] > 0
+        
+
+        #Model's degrees of freedom
+        df_model = (results.nobs - diff_order - DIFF_seasonal_order) - (len(results.params) - 1) #degrees of freedom for the model: (n - d - D) - estimated parameters(p, q, P, Q, constant term)
+
+        print("---------------------")
+        print("ARIMA MODEL RESULTS")
+        print("---------------------")
+
+        if order_model_flag:
+            print(f"ARIMA model order: p={ar_order}, d={diff_order}, q={ma_order}")
+        if seasonal_model_flag:
+            print(f"Seasonal ARIMA model fit with period {so_model[3]} and order: P={so_model[0]}, D={so_model[1]}, Q={so_model[2]}")
+
+        
+        # Print the information in a similar format to Minitab
+        print("\nFINAL ESTIMATES OF PARAMETERS")
+        print("-------------------------------")
+        # make a dataframe to store the results
+        
+        df_coefficients = pd.DataFrame({'Term': terms[0:n_coefficients], 'Coef': coefficients[0:n_coefficients], 'SE Coef': std_errors[0:n_coefficients], 'T-Value': t_values[0:n_coefficients], 'P-Value': p_values[0:n_coefficients]})
+        df_coefficients.style.format({'Coef': '{:.3f}', 'SE Coef': '{:.3f}', 'T-Value': '{:.3f}', 'P-Value': '{:.3f}'})
+        print(df_coefficients.to_string(index=False))
+
+
+        # Print the ANOVA table
+        print("\nRESIDUAL SUM OF SQUARES")
+        print("-------------------------")
+        # make a dataframe with the column names and no data
+        df_rss = pd.DataFrame(columns=['DF', 'SS', 'MS'])
+        # add the rows of data
+        SSE = np.sum(results.resid[max_order:]**2)
+
+        df_rss.loc[0] = [df_model, SSE, SSE/df_model]
+        print(df_rss.to_string(index=False))
+
+
+        # Print the information in a similar format to Minitab for LBQ test
+        print("\nLjung-Box Chi-Square Statistics")
+        print("----------------------------------")
+        if len(results.resid[max_order:]) > 48:
+            lagvalues = np.array([12, 24, 36, 48])
+        elif len(results.resid[max_order:]) > 36:
+            lagvalues = np.array([12, 24, 36])
+        elif len(results.resid[max_order:]) > 24:
+            lagvalues = np.array([12, 24])
+        elif len(results.resid[max_order:]) > 12:
+            lagvalues = np.array([12])
+        else:
+            lagvalues = int(np.sqrt(len(results.resid[max_order:])))
+        LBQ=acorr_ljungbox(results.resid[max_order:], lags=lagvalues, boxpierce=True)
+
+        df_LBtest = pd.DataFrame({'Lag': lagvalues, 'Chi-Square': LBQ.lb_stat, 'P-Value': LBQ.lb_pvalue})
+        df_LBtest.style.format({'Lag': '{:.3f}', 'Chi-Square test': '{:.3f}', 'P-Value': '{:.3f}'})
+        print(df_LBtest.to_string(index=False))
+    
+        return
+
 def ARIMA(x, order, add_constant):
     """Fits an ARIMA model.
 
@@ -753,6 +1258,49 @@ def ARIMA(x, order, add_constant):
     results.fittedvalues[:np.max(results.model.order)] = np.nan
 
     return results
+
+class Models:
+    @staticmethod
+    def ARIMA(x, order, add_constant):
+        """Fits an ARIMA model.
+
+        Parameters
+        ----------
+        x : data object
+        
+        order : tuple
+            The order of the ARIMA model as (p, d, q)
+
+        add_constant : bool
+            True if the model should include a constant term, False otherwise
+
+        Returns
+        -------
+        None
+        """
+        p=order[0]
+        d=order[1]
+        q=order[2]
+
+        if add_constant:
+            const_coeff='c'
+        else:
+            const_coeff='n'
+        
+
+        if d!=0:
+            x=x.diff(d)
+            
+        results = arimafromlib(x, order=(p,0,q), trend=const_coeff).fit()
+
+        # fixing the wrong values in the ARIMA returned object
+        results.model.order = (p,d,q)
+
+        # fixing the wrong residuals and fittedvalues in the ARIMA returned object
+        results.resid[:np.max(results.model.order)] = np.nan
+        results.fittedvalues[:np.max(results.model.order)] = np.nan
+
+        return results
 
 # create a class called StepwiseRegression that performs stepwise regression when fitting a model
 class StepwiseRegression:
