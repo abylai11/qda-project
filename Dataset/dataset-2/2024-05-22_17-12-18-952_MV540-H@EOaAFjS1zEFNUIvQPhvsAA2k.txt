@@ -1,0 +1,14 @@
+Date: 22.05.2024
+Time: 17:12:18
+TZ: GMT/UTC.093
+ImageNo: 70
+Exposure: 10000
+Brightness: 300
+Focus: N/A
+LightSource: 6GF3540-8DA13
+ProgramNo: 6.Studenti2
+Image UID: EOaAFjS1zEFNUIvQPhvsAA2k
+Additional Information:
+Trg
+Read
+Read All
