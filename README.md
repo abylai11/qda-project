@@ -1,22 +1,4 @@
 # qda-project
-
-## Notes meeting 29/04
-> Parts
-- We remove extend and solidity because their info is already carried by area and Wpixels ratio variables, once we applied the recentering correction of the objects. So add the plots of one variable vs area or wpixels ratio, to demnostrate this
-- We remove the Wpixels and Bpixels since they merge into the ratio
-- The axes for now we keep them there seems to be a bit of variability in there instead. Well, with equivalent diameter they are similar, so we remove the equivalent diameter, since it is also highly correlated with the area
-
-> Voids
-- For each void we take only the area, we decided this using the for filtering loop on the values of the variables for each image
-
-
-## Notes meeting 1
-- It is correct the boostrap approach?
-- Variable form the number of pixel
-- Normality of num voids
-- Boostrap t intervals on the average values of df_voids_new
-- divide in big an small voids
-
 ## Goal
 Design a statistical process monitoring method for the in-line detection of defects, ie Propose a method to model, analyze and reduce the dimensionality of the in-line inspection data (use this real dataset to test and apply the methods you learn in this course).
 
@@ -36,12 +18,3 @@ Design a statistical process monitoring method for the in-line detection of defe
 - You are free to test and compare more than one approach (in that case, a trade-off analysis is expected, as well as a clear statement about the best approach).  
 - In Phase 2, if you are not happy with the performance of your proposed method, you can also suggest how to tune it or revise it to achieve a more effective defect detection.  
 - Any creative solution is welcome.
-
-## Reports and upload
-Expected output: a zip folder that includes: 
-
-1. A Python notebook + Dataframe that describes the proposed approach, the used code and functions, all the performed analysis, the assumptions and a discussion of achieved results. The provided template shall be used.
-
-or 
-
-2. Teams who will not use Phython for the project, will be asked to submit a text report in PDF format (the provided template shall be used). Source code or project files + short readme file + Dataframe (only for teams who will not use Phyton).
